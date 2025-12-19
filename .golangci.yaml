@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=
-# Configuration validated by golangci-lint v2.6.2+
+# Configuration for golangci-lint v2
 # The IDE schema validator may show false positives - ignore them
 version: "2"
 
@@ -7,8 +7,6 @@ run:
   modules-download-mode: readonly
   tests: true
   timeout: 5m
-  skip-dirs:
-    - examples
 
 linters:
   enable:
@@ -41,25 +39,41 @@ linters:
         - all
     gocyclo:
       min-complexity: 15
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - std-error-handling
+    rules:
+      - linters:
+          - contextcheck
+        path: internal/ratelimit/limiter\.go
+        text: "Non-inherited new context"
+      - linters:
+          - errcheck
+        path: _test\.go
+      - linters:
+          - gocyclo
+        path: _test\.go
+      - linters:
+          - errcheck
+        path: internal/output/formatter\.go
+        text: "Error return value of `fmt.(Fprintln|Fprintf)` is not checked"
+    paths:
+      - third_party$
+      - vendor$
+      - examples$
 
 issues:
   max-issues-per-linter: 50
   max-same-issues: 3
-  exclude-rules:
-    - path: internal/ratelimit/limiter\.go
-      linters:
-        - contextcheck
-      text: "Non-inherited new context"
-    - path: _test\.go
-      linters:
-        - errcheck
-        - gocyclo
-    - path: internal/output/formatter\.go
-      linters:
-        - errcheck
-    - path: third_party
-      linters:
-        - all
-    - path: vendor
-      linters:
-        - all
+  new: false
+
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - vendor$
+      - examples$
