@@ -1,0 +1,298 @@
+openapi: 3.0.3
+info:
+  title: Snyk Targets API (Minimal)
+  version: 2024-12-19
+  description: |
+    Minimal OpenAPI spec for Snyk Targets API.
+
+    Targets represent source control repositories or container registries
+    that have been imported into Snyk for monitoring.
+
+    Full spec: https://apidocs.snyk.io/
+
+servers:
+  - url: https://api.snyk.io/rest
+    description: Snyk REST API
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: token
+
+  schemas:
+    Target:
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Target ID
+        type:
+          type: string
+          enum: [target]
+        attributes:
+          type: object
+          required:
+            - display_name
+            - url
+            - origin
+          properties:
+            display_name:
+              type: string
+              description: Human-readable name for the target
+            url:
+              type: string
+              format: uri
+              description: URL of the target repository or registry
+            origin:
+              type: string
+              description: Source of the target (e.g., github, gitlab, cli)
+            created:
+              type: string
+              format: date-time
+              description: When the target was created
+        relationships:
+          type: object
+          properties:
+            organization:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    type:
+                      type: string
+                      enum: [organization]
+
+    TargetList:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Target'
+        links:
+          type: object
+          properties:
+            next:
+              type: string
+              format: uri
+            prev:
+              type: string
+              format: uri
+            self:
+              type: string
+              format: uri
+
+    TargetResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/Target'
+
+    Error:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            required:
+              - status
+              - detail
+            properties:
+              status:
+                type: string
+              detail:
+                type: string
+              title:
+                type: string
+
+    DeleteTargetRequest:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - type
+          properties:
+            type:
+              type: string
+              enum: [target]
+
+paths:
+  /orgs/{org_id}/targets:
+    get:
+      operationId: listTargets
+      summary: List targets in an organization
+      description: Returns a list of targets for a given organization
+      tags:
+        - Targets
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: Number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: starting_after
+          in: query
+          description: Cursor for pagination
+          schema:
+            type: string
+        - name: origin
+          in: query
+          description: Filter by origin (e.g., github, gitlab, cli)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of targets
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/TargetList'
+        '401':
+          description: Unauthorized
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Organization not found
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /orgs/{org_id}/targets/{target_id}:
+    get:
+      operationId: getTarget
+      summary: Get target by ID
+      description: Returns details of a specific target
+      tags:
+        - Targets
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+            format: uuid
+        - name: target_id
+          in: path
+          required: true
+          description: Target ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Target details
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/TargetResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Target or Organization not found
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      operationId: deleteTarget
+      summary: Delete target
+      description: Deletes a target by ID
+      tags:
+        - Targets
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+            format: uuid
+        - name: target_id
+          in: path
+          required: true
+          description: Target ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/DeleteTargetRequest'
+      responses:
+        '204':
+          description: Target deleted successfully (No Content)
+        '401':
+          description: Unauthorized
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Target or Organization not found
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'

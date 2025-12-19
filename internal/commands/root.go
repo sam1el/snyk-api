@@ -60,6 +60,7 @@ func init() {
 	// Add subcommands
 	rootCmd.AddCommand(newOrgsCmd())
 	rootCmd.AddCommand(newProjectsCmd())
+	rootCmd.AddCommand(newTargetsCmd())
 	rootCmd.AddCommand(newVersionCmd())
 }
 

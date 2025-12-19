@@ -1,0 +1,6 @@
+package: targets
+generate:
+  client: true
+  models: true
+  embedded-spec: true
+output: client_generated.go
