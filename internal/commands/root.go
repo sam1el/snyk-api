@@ -61,6 +61,7 @@ func init() {
 	rootCmd.AddCommand(newOrgsCmd())
 	rootCmd.AddCommand(newProjectsCmd())
 	rootCmd.AddCommand(newTargetsCmd())
+	rootCmd.AddCommand(newIssuesCmd())
 	rootCmd.AddCommand(newVersionCmd())
 }
 
