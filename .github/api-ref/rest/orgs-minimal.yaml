@@ -1,0 +1,182 @@
+openapi: 3.0.3
+info:
+  title: Snyk Organizations API (Minimal Example)
+  version: 2024-12-19
+  description: |
+    Minimal OpenAPI spec for Snyk Organizations API to demonstrate client generation.
+    This will be replaced with the full spec from https://apidocs.snyk.io/
+
+servers:
+  - url: https://api.snyk.io/rest
+    description: Snyk REST API
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: token
+
+  schemas:
+    Organization:
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Organization ID
+        type:
+          type: string
+          enum: [organization]
+        attributes:
+          type: object
+          required:
+            - name
+            - slug
+          properties:
+            name:
+              type: string
+              description: Organization name
+            slug:
+              type: string
+              description: Organization slug
+            created:
+              type: string
+              format: date-time
+
+    OrganizationList:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Organization'
+        links:
+          type: object
+          properties:
+            next:
+              type: string
+              format: uri
+            prev:
+              type: string
+              format: uri
+            self:
+              type: string
+              format: uri
+
+    Error:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            required:
+              - status
+              - detail
+            properties:
+              status:
+                type: string
+              detail:
+                type: string
+              title:
+                type: string
+
+paths:
+  /orgs:
+    get:
+      operationId: listOrganizations
+      summary: List all organizations
+      description: Returns a list of organizations the authenticated user has access to
+      tags:
+        - Organizations
+      parameters:
+        - name: limit
+          in: query
+          description: Number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: starting_after
+          in: query
+          description: Cursor for pagination
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of organizations
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/OrganizationList'
+        '401':
+          description: Unauthorized
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /orgs/{org_id}:
+    get:
+      operationId: getOrganization
+      summary: Get organization by ID
+      description: Returns details of a specific organization
+      tags:
+        - Organizations
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Organization details
+          content:
+            application/vnd.api+json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Organization'
+        '401':
+          description: Unauthorized
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Organization not found
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'

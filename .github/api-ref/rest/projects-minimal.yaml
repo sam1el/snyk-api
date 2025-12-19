@@ -1,0 +1,408 @@
+openapi: 3.0.3
+info:
+  title: Snyk Projects API (Minimal)
+  version: 2025-11-05
+  description: |
+    Minimal OpenAPI spec for Snyk Projects API.
+
+    Projects represent monitored code repositories or packages in Snyk.
+    Each project contains vulnerability findings and configuration.
+
+servers:
+  - url: https://api.snyk.io/rest
+    description: Snyk REST API
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: token
+
+  schemas:
+    Project:
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Project ID
+        type:
+          type: string
+          enum: [project]
+        attributes:
+          type: object
+          required:
+            - name
+            - created
+            - origin
+            - type
+          properties:
+            name:
+              type: string
+              description: Project name
+            created:
+              type: string
+              format: date-time
+              description: Project creation date
+            origin:
+              type: string
+              description: Source of the project (e.g., github, cli)
+            type:
+              type: string
+              description: Project type (e.g., npm, maven, pip)
+            status:
+              type: string
+              enum: [active, inactive]
+              description: Project status
+            target_reference:
+              type: string
+              description: Branch or reference being monitored
+            tags:
+              type: array
+              items:
+                type: object
+                properties:
+                  key:
+                    type: string
+                  value:
+                    type: string
+        relationships:
+          type: object
+          properties:
+            organization:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    type:
+                      type: string
+                      enum: [organization]
+            target:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    type:
+                      type: string
+                      enum: [target]
+
+    ProjectList:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+        links:
+          type: object
+          properties:
+            next:
+              type: string
+              format: uri
+            prev:
+              type: string
+              format: uri
+            self:
+              type: string
+              format: uri
+        meta:
+          type: object
+          properties:
+            count:
+              type: integer
+              description: Total number of projects
+
+    ProjectResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/Project'
+
+    Error:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            required:
+              - status
+              - detail
+            properties:
+              status:
+                type: string
+              detail:
+                type: string
+              title:
+                type: string
+
+paths:
+  /orgs/{org_id}/projects:
+    get:
+      operationId: listProjects
+      summary: List projects in an organization
+      description: Returns a list of projects for the specified organization
+      tags:
+        - Projects
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: Number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: starting_after
+          in: query
+          description: Cursor for pagination
+          schema:
+            type: string
+        - name: target_id
+          in: query
+          description: Filter by target ID
+          schema:
+            type: string
+            format: uuid
+        - name: origin
+          in: query
+          description: Filter by origin (e.g., github, cli)
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: Filter by project type (e.g., npm, maven)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ProjectList'
+        '401':
+          description: Unauthorized
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Organization not found
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /orgs/{org_id}/projects/{project_id}:
+    get:
+      operationId: getProject
+      summary: Get project by ID
+      description: Returns details of a specific project
+      tags:
+        - Projects
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+            format: uuid
+        - name: project_id
+          in: path
+          required: true
+          description: Project ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Project details
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Project not found
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      operationId: updateProject
+      summary: Update project
+      description: Updates project attributes
+      tags:
+        - Projects
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+            format: uuid
+        - name: project_id
+          in: path
+          required: true
+          description: Project ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/vnd.api+json:
+            schema:
+              type: object
+              required:
+                - data
+              properties:
+                data:
+                  type: object
+                  required:
+                    - id
+                    - type
+                    - attributes
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    type:
+                      type: string
+                      enum: [project]
+                    attributes:
+                      type: object
+                      properties:
+                        tags:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              value:
+                                type: string
+      responses:
+        '200':
+          description: Project updated
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '400':
+          description: Bad request
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Project not found
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      operationId: deleteProject
+      summary: Delete project
+      description: Deletes a project from Snyk
+      tags:
+        - Projects
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+            format: uuid
+        - name: project_id
+          in: path
+          required: true
+          description: Project ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Project deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Project not found
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'

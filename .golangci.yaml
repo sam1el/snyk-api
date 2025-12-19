@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=
+# Configuration validated by golangci-lint v2.6.2+
+# The IDE schema validator may show false positives - ignore them
+version: "2"
+
+run:
+  modules-download-mode: readonly
+  tests: true
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    - gocyclo
+    - bodyclose
+    - contextcheck
+    - errorlint
+    - unconvert
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    govet:
+      enable:
+        - assign
+        - atomic
+        - bools
+        - copylocks
+        - nilfunc
+        - printf
+        - unmarshal
+      enable-all: false
+    staticcheck:
+      checks:
+        - all
+    gocyclo:
+      min-complexity: 15
+
+issues:
+  max-issues-per-linter: 50
+  max-same-issues: 3
+  exclude-rules:
+    - path: internal/ratelimit/limiter\.go
+      linters:
+        - contextcheck
+      text: "Non-inherited new context"
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gocyclo
+    - path: internal/output/formatter\.go
+      linters:
+        - errcheck
+    - path: third_party
+      linters:
+        - all
+    - path: vendor
+      linters:
+        - all
