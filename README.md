@@ -105,7 +105,7 @@ func main() {
     if len(orgsList.Data) > 0 {
         orgID := orgsList.Data[0].Id.String()
         projectsClient := projects.NewProjectsClient(baseClient)
-        
+
         projectsList, err := projectsClient.ListProjects(ctx, orgID, &projects.ListProjectsParams{
             Limit: &limit,
         })

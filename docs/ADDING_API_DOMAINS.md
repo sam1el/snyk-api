@@ -588,4 +588,3 @@ See existing implementations for patterns:
 - 📖 [Architecture Decisions](planning/05-architecture-decisions.md)
 - 💬 [Open a Discussion](https://github.com/sam1el/snyk-api/discussions)
 - 🐛 [Report an Issue](https://github.com/sam1el/snyk-api/issues)
-

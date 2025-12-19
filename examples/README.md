@@ -99,18 +99,18 @@ for {
         Limit:         &limit,
         StartingAfter: cursor,
     }
-    
+
     result, err := projectsClient.ListProjects(ctx, orgID, params)
     if err != nil {
         return err
     }
-    
+
     // Process result.Data...
-    
+
     if result.Links == nil || result.Links.Next == nil {
         break // No more pages
     }
-    
+
     // Extract cursor from next link
     cursor = extractCursor(result.Links.Next)
 }
@@ -172,4 +172,3 @@ snyk-api orgs list
 - [Main README](../README.md)
 - [API Documentation](https://pkg.go.dev/github.com/sam1el/snyk-api)
 - [Contributing Guide](../CONTRIBUTING.md)
-

@@ -190,10 +190,10 @@ go test -v ./pkg/client/
 func TestNewOrgsClient(t *testing.T) {
     // Use testify for assertions
     assert := assert.New(t)
-    
+
     // Create test client
     client := NewOrgsClient(baseClient)
-    
+
     assert.NotNil(client)
     assert.NotNil(client.apiClient)
 }
