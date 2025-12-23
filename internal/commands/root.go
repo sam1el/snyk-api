@@ -57,10 +57,19 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&version, "api-version", "", "Snyk API version (e.g., 2025-11-05)")
 	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "json", "Output format: json, yaml, table")
 
-	// Add subcommands
+	// Add subcommands - Generated REST API (minimal)
 	rootCmd.AddCommand(newOrgsCmd())
 	rootCmd.AddCommand(newProjectsCmd())
 	rootCmd.AddCommand(newTargetsCmd())
+	rootCmd.AddCommand(newIssuesCmd())
+
+	// Add v1 API commands
+	rootCmd.AddCommand(newV1Cmd())
+
+	// Add full REST API commands (manual implementation)
+	rootCmd.AddCommand(newRESTCmd())
+
+	// Utility commands
 	rootCmd.AddCommand(newVersionCmd())
 }
 

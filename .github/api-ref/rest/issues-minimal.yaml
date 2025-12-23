@@ -1,0 +1,295 @@
+openapi: 3.0.3
+info:
+  title: Snyk Issues API (Minimal)
+  version: 2024-12-19
+  description: |
+    Minimal OpenAPI spec for Snyk Issues API.
+
+    Issues represent security vulnerabilities and license issues found in your projects.
+
+    Full spec: https://apidocs.snyk.io/
+
+servers:
+  - url: https://api.snyk.io/rest
+    description: Snyk REST API
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: token
+
+  schemas:
+    Issue:
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Issue ID
+        type:
+          type: string
+          enum: [issue]
+        attributes:
+          type: object
+          required:
+            - title
+            - type
+            - severity
+          properties:
+            title:
+              type: string
+              description: Issue title
+            type:
+              type: string
+              description: Issue type (vuln, license)
+              enum: [vuln, license]
+            severity:
+              type: string
+              description: Issue severity
+              enum: [critical, high, medium, low]
+            status:
+              type: string
+              description: Issue status
+              enum: [open, resolved, ignored]
+            description:
+              type: string
+              description: Detailed description of the issue
+            created_at:
+              type: string
+              format: date-time
+              description: When the issue was first detected
+            updated_at:
+              type: string
+              format: date-time
+              description: When the issue was last updated
+            effective_severity_level:
+              type: string
+              enum: [critical, high, medium, low]
+            problems:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  source:
+                    type: string
+            coordinates:
+              type: array
+              items:
+                type: object
+                properties:
+                  is_fixable:
+                    type: boolean
+                  is_patchable:
+                    type: boolean
+                  is_pinnable:
+                    type: boolean
+                  is_upgradeable:
+                    type: boolean
+        relationships:
+          type: object
+          properties:
+            organization:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    type:
+                      type: string
+                      enum: [organization]
+            scan_item:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    type:
+                      type: string
+
+    IssueList:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Issue'
+        links:
+          type: object
+          properties:
+            next:
+              type: string
+              format: uri
+            prev:
+              type: string
+              format: uri
+            self:
+              type: string
+              format: uri
+
+    IssueResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/Issue'
+
+    Error:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            required:
+              - status
+              - detail
+            properties:
+              status:
+                type: string
+              detail:
+                type: string
+              title:
+                type: string
+
+paths:
+  /orgs/{org_id}/issues:
+    get:
+      operationId: listIssuesForOrg
+      summary: List issues in an organization
+      description: Returns a list of issues across all projects in an organization
+      tags:
+        - Issues
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: Number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: starting_after
+          in: query
+          description: Cursor for pagination
+          schema:
+            type: string
+        - name: severity
+          in: query
+          description: Filter by severity
+          schema:
+            type: string
+            enum: [critical, high, medium, low]
+        - name: type
+          in: query
+          description: Filter by issue type
+          schema:
+            type: string
+            enum: [vuln, license]
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            type: string
+            enum: [open, resolved, ignored]
+      responses:
+        '200':
+          description: List of issues
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/IssueList'
+        '401':
+          description: Unauthorized
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Organization not found
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /orgs/{org_id}/issues/{issue_id}:
+    get:
+      operationId: getIssue
+      summary: Get issue by ID
+      description: Returns details of a specific issue
+      tags:
+        - Issues
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          description: Organization ID
+          schema:
+            type: string
+            format: uuid
+        - name: issue_id
+          in: path
+          required: true
+          description: Issue ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Issue details
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/IssueResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Issue or Organization not found
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Error'

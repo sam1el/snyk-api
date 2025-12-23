@@ -223,3 +223,15 @@ func (c *Client) RestBaseURL() string {
 func (c *Client) APIVersion() APIVersion {
 	return c.config.apiVersion
 }
+
+// HTTPClient returns the underlying HTTP client for direct requests.
+func (c *Client) HTTPClient() *http.Client {
+	return c.networkAccess.GetHttpClient()
+}
+
+// Token returns the authentication token.
+func (c *Client) Token() string {
+	cfg := c.engine.GetConfiguration()
+	token := cfg.GetString(configuration.AUTHENTICATION_TOKEN)
+	return token
+}
