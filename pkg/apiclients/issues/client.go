@@ -112,4 +112,3 @@ type roundTripperFunc struct {
 func (rt *roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return rt.roundTrip(req)
 }
-
