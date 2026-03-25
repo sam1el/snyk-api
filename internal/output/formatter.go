@@ -2,6 +2,7 @@
 package output
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,7 +10,9 @@ import (
 	"reflect"
 	"strings"
 	"text/tabwriter"
+	"text/template"
 
+	"github.com/itchyny/gojq"
 	"gopkg.in/yaml.v3"
 )
 
@@ -27,15 +30,24 @@ const (
 
 // Formatter handles output formatting.
 type Formatter struct {
-	format Format
-	writer io.Writer
+	format       Format
+	writer       io.Writer
+	templateText string
+	jqQuery      string
 }
+
+var (
+	defaultTemplate string
+	defaultJQ       string
+)
 
 // New creates a new formatter with the specified format.
 func New(format string) *Formatter {
 	return &Formatter{
-		format: Format(format),
-		writer: os.Stdout,
+		format:       Format(format),
+		writer:       os.Stdout,
+		templateText: defaultTemplate,
+		jqQuery:      defaultJQ,
 	}
 }
 
@@ -45,8 +57,44 @@ func (f *Formatter) WithWriter(w io.Writer) *Formatter {
 	return f
 }
 
+// WithTemplate sets a text/template string to render output.
+func (f *Formatter) WithTemplate(tmpl string) *Formatter {
+	f.templateText = tmpl
+	return f
+}
+
+// WithJQ sets a jq-style query to pre-filter data.
+func (f *Formatter) WithJQ(query string) *Formatter {
+	f.jqQuery = query
+	return f
+}
+
+// SetDefaultTemplate sets a process-wide default template.
+func SetDefaultTemplate(tmpl string) {
+	defaultTemplate = tmpl
+}
+
+// SetDefaultJQ sets a process-wide default jq query.
+func SetDefaultJQ(query string) {
+	defaultJQ = query
+}
+
 // Print outputs data in the configured format.
 func (f *Formatter) Print(data interface{}) error {
+	// Apply jq filter first if provided.
+	if f.jqQuery != "" {
+		filtered, err := f.applyJQ(data)
+		if err != nil {
+			return err
+		}
+		data = filtered
+	}
+
+	// Template output takes precedence over format selection.
+	if f.templateText != "" {
+		return f.printTemplate(data)
+	}
+
 	switch f.format {
 	case FormatJSON:
 		return f.printJSON(data)
@@ -166,4 +214,51 @@ func (f *Formatter) printMapTable(w *tabwriter.Writer, v reflect.Value) error {
 	}
 
 	return nil
+}
+
+func (f *Formatter) printTemplate(data interface{}) error {
+	tmpl, err := template.New("out").Option("missingkey=zero").Parse(f.templateText)
+	if err != nil {
+		return fmt.Errorf("parse template: %w", err)
+	}
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return fmt.Errorf("execute template: %w", err)
+	}
+	_, err = f.writer.Write(buf.Bytes())
+	return err
+}
+
+func (f *Formatter) applyJQ(data interface{}) (interface{}, error) {
+	query, err := gojq.Parse(f.jqQuery)
+	if err != nil {
+		return nil, fmt.Errorf("parse jq query: %w", err)
+	}
+
+	normalized, err := normalizeForJQ(data)
+	if err != nil {
+		return nil, err
+	}
+
+	iter := query.Run(normalized)
+	v, ok := iter.Next()
+	if !ok {
+		return nil, nil
+	}
+	if err, ok := v.(error); ok {
+		return nil, fmt.Errorf("apply jq query: %w", err)
+	}
+	return v, nil
+}
+
+func normalizeForJQ(data interface{}) (interface{}, error) {
+	raw, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("marshal for jq: %w", err)
+	}
+	var out interface{}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil, fmt.Errorf("unmarshal for jq: %w", err)
+	}
+	return out, nil
 }

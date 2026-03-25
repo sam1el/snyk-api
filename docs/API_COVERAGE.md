@@ -13,6 +13,7 @@ This document details the API coverage provided by the snyk-api tool.
 ## v1 API Coverage (93 Operations)
 
 ### Projects (22 operations)
+
 - `ListAggregatedIssues` - List all aggregated issues for a project
 - `GetIssuePaths` - Get issue paths for a project issue
 - `ListHistory` - List all project snapshots
@@ -37,6 +38,7 @@ This document details the API coverage provided by the snyk-api tool.
 - `Get` - Get project details
 
 ### Testing (17 operations)
+
 - `TestMaven` - Test a Maven package
 - `TestMavenPackage` - Test a specific Maven package version
 - `TestNpm` - Test an npm package
@@ -56,6 +58,7 @@ This document details the API coverage provided by the snyk-api tool.
 - `TestDepGraph` - Test a dependency graph
 
 ### Organizations (14 operations)
+
 - `ListMembers` - List organization members
 - `InviteUser` - Invite a user to the organization
 - `ViewPendingInvites` - View pending user invites
@@ -72,6 +75,7 @@ This document details the API coverage provided by the snyk-api tool.
 - `ListNotificationSettings` - List notification settings
 
 ### Integrations (11 operations)
+
 - `ListIntegrations` - List all integrations
 - `GetIntegration` - Get a specific integration
 - `CreateIntegration` - Create a new integration
@@ -85,6 +89,7 @@ This document details the API coverage provided by the snyk-api tool.
 - `ImportProject` - Import a project
 
 ### Reporting (9 operations)
+
 - `ListLatestIssues` - List latest issues
 - `ListIssues` - List issues with filters
 - `GetLatestIssueCounts` - Get latest issue counts
@@ -96,6 +101,7 @@ This document details the API coverage provided by the snyk-api tool.
 - `GetDependencyCounts` - Get dependency counts
 
 ### Webhooks (5 operations)
+
 - `CreateWebhook` - Create a new webhook
 - `ListWebhooks` - List all webhooks
 - `GetWebhook` - Get a specific webhook
@@ -103,6 +109,7 @@ This document details the API coverage provided by the snyk-api tool.
 - `PingWebhook` - Ping a webhook to test it
 
 ### Groups (8 operations)
+
 - `ListMembers` - List all group members
 - `AddMember` - Add a member to the group
 - `ListOrgs` - List all organizations in the group
@@ -113,6 +120,7 @@ This document details the API coverage provided by the snyk-api tool.
 - `GetRole` - Get role details
 
 ### Users (6 operations)
+
 - `GetMyDetails` - Get current user details
 - `GetUserDetails` - Get details for a specific user
 - `GetOrgNotificationSettings` - Get org notification settings
@@ -121,11 +129,13 @@ This document details the API coverage provided by the snyk-api tool.
 - `UpdateProjectNotificationSettings` - Update project notification settings
 
 ### Monitor (1 operation)
+
 - `MonitorDepGraph` - Monitor a dependency graph
 
 ## REST API Coverage (103 Operations)
 
 ### Organizations (48 operations)
+
 - List, Get, Update organizations
 - Memberships: List, Get, Update, Delete
 - Invites: List, Create, Delete
@@ -144,6 +154,7 @@ This document details the API coverage provided by the snyk-api tool.
 - Export: Create, Get
 
 ### Groups (27 operations)
+
 - List, Get groups
 - Memberships: List, Get, Delete
 - Org Memberships: List
@@ -160,6 +171,7 @@ This document details the API coverage provided by the snyk-api tool.
 - Users: Get
 
 ### Tenants (17 operations)
+
 - List, Get tenants
 - Memberships: List, Get, Delete
 - Roles: List, Get
@@ -169,6 +181,7 @@ This document details the API coverage provided by the snyk-api tool.
 - Broker Integrations: List
 
 ### Self (11 operations)
+
 - Get current user
 - Access Requests: List
 - Apps: List, Get, Delete
@@ -178,7 +191,8 @@ This document details the API coverage provided by the snyk-api tool.
 ## CLI Commands
 
 ### Top-level Commands (Minimal REST - Generated)
-```
+
+```sh
 snyk-api orgs list|get
 snyk-api projects list|get|delete
 snyk-api targets list|get|delete
@@ -186,7 +200,8 @@ snyk-api issues list|get
 ```
 
 ### v1 API Commands
-```
+
+```sh
 snyk-api v1 groups [operations]
 snyk-api v1 integrations [operations]
 snyk-api v1 orgs [operations]
@@ -198,7 +213,8 @@ snyk-api v1 webhooks [operations]
 ```
 
 ### Full REST API Commands (Manual)
-```
+
+```sh
 snyk-api rest orgs list|get|memberships|invites|service-accounts|policies|...
 snyk-api rest groups list|get|memberships|orgs|policies|...
 snyk-api rest tenants list|get|memberships|roles|broker-deployments|...
@@ -214,7 +230,7 @@ snyk-api rest self get|apps|access-requests
 
 ## Architecture
 
-```
+```tree
 pkg/
 ├── apiclients/
 │   ├── orgs/         # Generated REST client (minimal)

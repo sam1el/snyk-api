@@ -5,6 +5,7 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/sam1el/snyk-api/internal/ratelimit"
+	cfgpkg "github.com/sam1el/snyk-api/pkg/config"
 	"github.com/snyk/go-application-framework/pkg/workflow"
 )
 
@@ -23,15 +24,28 @@ type config struct {
 }
 
 // defaultConfig returns the default client configuration.
-func defaultConfig() *config {
+func defaultConfig(res cfgpkg.Resolved) *config {
 	nopLogger := zerolog.Nop()
+	version := DefaultAPIVersion
+	if parsed, err := ParseVersion(res.APIVersion); err == nil {
+		version = parsed
+	}
+	baseURL := res.APIURL
+	if baseURL == "" {
+		baseURL = "https://api.snyk.io"
+	}
+	restBase := res.RestAPIURL
+	if restBase == "" {
+		restBase = "https://api.snyk.io/rest"
+	}
+
 	return &config{
 		rateLimit:   ratelimit.DefaultConfig(),
 		logger:      &nopLogger,
 		userAgent:   "snyk-api-go/0.1.0",
-		baseURL:     "https://api.snyk.io",
-		restBaseURL: "https://api.snyk.io/rest",
-		apiVersion:  DefaultAPIVersion,
+		baseURL:     baseURL,
+		restBaseURL: restBase,
+		apiVersion:  version,
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/sam1el/snyk-api/internal/ratelimit"
+	cfgpkg "github.com/sam1el/snyk-api/pkg/config"
 	"github.com/snyk/go-application-framework/pkg/app"
 	"github.com/snyk/go-application-framework/pkg/configuration"
 	"github.com/snyk/go-application-framework/pkg/networking"
@@ -28,7 +29,8 @@ type Client struct {
 
 // New creates a new API client with the given options.
 func New(ctx context.Context, opts ...Option) (*Client, error) {
-	cfg := defaultConfig()
+	resolved := resolveRuntimeConfig()
+	cfg := defaultConfig(resolved)
 	for _, opt := range opts {
 		opt(cfg)
 	}
@@ -44,6 +46,15 @@ func New(ctx context.Context, opts ...Option) (*Client, error) {
 	} else {
 		c.engine = cfg.engine
 	}
+
+	// Apply token to configuration for auth header injection.
+	if resolved.Token != "" {
+		c.engine.GetConfiguration().Set(configuration.AUTHENTICATION_TOKEN, resolved.Token)
+	}
+
+	// Store base URLs in configuration for downstream consumers if needed.
+	c.engine.GetConfiguration().Set(configuration.API_URL, cfg.baseURL)
+	c.engine.GetConfiguration().Set(cfgpkg.KeyRESTAPIURL, cfg.restBaseURL)
 
 	// Get network access from engine
 	c.networkAccess = c.engine.GetNetworkAccess()

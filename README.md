@@ -11,15 +11,15 @@ A comprehensive Go library and CLI tool for managing Snyk APIs. Built on [go-app
 
 > **Note**: Currently developed at `github.com/sam1el/snyk-api`. Upon maturity and official adoption, it will be migrated to `github.com/snyk/snyk-api`.
 
-## ✨ Features
-
-- 🎯 **Type-Safe API Clients** - Generated from official OpenAPI specs
-- 🔄 **Rate Limiting** - Token bucket algorithm with worker pools
-- 🔁 **Smart Retries** - Exponential backoff with jitter
-- 🎨 **Multiple Output Formats** - JSON, YAML, and table views
-- 🔌 **Framework Integration** - Built on go-application-framework
+- 🛡️ **Full Coverage** - 196 operations across REST (103) and v1 (93)
+- 🎯 **Type-Safe + Manual** - Generated clients where possible, hand-tuned wrappers for complex REST discriminators
+- 🔄 **Rate Limiting & Retries** - Token bucket with exponential backoff/jitter
+- 🎨 **Flexible Output** - JSON, YAML, and table views
+- 🧩 **Templating & Filters** - Go templates (`--template`) and jq-style filters (`--jq`)
+- 🔌 **Framework Integration** - Built on go-application-framework (auth, config)
 - 🌍 **Multi-Region Support** - All Snyk regional endpoints
-- 📦 **Library + CLI** - Use as Go package or standalone tool
+- 📦 **Library + CLI** - Importable Go SDK and full-featured Cobra CLI
+- 🔐 **Profiles & Auth** - Profile-aware config file, auth/login helpers, shell completions
 
 ## 📦 Installation
 
@@ -39,27 +39,57 @@ go get github.com/sam1el/snyk-api
 
 ### CLI Usage
 
+REST examples:
+
 ```bash
 # Set your Snyk API token
 export SNYK_TOKEN=your-snyk-token-here
 
-# List organizations
-snyk-api orgs list
+# List organizations (REST)
+snyk-api rest orgs list --limit 20
 
-# List projects in an organization
-snyk-api projects list --org-id=<org-id>
+# Get org details (REST, YAML output)
+snyk-api rest orgs get <org-id> --output yaml
 
-# Filter projects by type
-snyk-api projects list --org-id=<org-id> --type npm --origin github
+# List group orgs (REST)
+snyk-api rest groups orgs list --group-id <group-id>
 
-# Get organization details (YAML output)
-snyk-api orgs get <org-id> --output yaml
+# List projects in an org (REST)
+snyk-api rest orgs projects list --org-id <org-id> --limit 50
 
-# Get project details (table output)
-snyk-api projects get <project-id> --org-id=<org-id> --output table
+# Export issues (REST)
+snyk-api rest orgs export create --org-id <org-id>
+```
 
-# Delete a project
-snyk-api projects delete <project-id> --org-id=<org-id>
+v1 examples:
+
+```bash
+# Aggregated issues (v1)
+snyk-api v1 projects aggregated-issues --org-id <org-id> --project-id <project-id> --severity critical,high
+
+# Dependency graph (v1)
+snyk-api v1 projects dep-graph --org-id <org-id> --project-id <project-id>
+
+# Webhooks (v1)
+snyk-api v1 webhooks list --org-id <org-id>
+```
+
+Auth, profiles, config:
+
+```bash
+# Login and store token in a profile
+snyk-api auth login --profile prod
+
+# Switch profile
+snyk-api config use-profile prod
+
+# Set defaults (api_url, org, output) for a profile
+snyk-api config set api_url https://api.eu.snyk.io --profile prod
+snyk-api config set org_id <org-id> --profile prod
+snyk-api config set output yaml --profile prod
+
+# Check status
+snyk-api auth status --profile prod
 ```
 
 ### Library Usage
@@ -137,21 +167,44 @@ baseClient, err := client.New(ctx,
 )
 ```
 
-## 🎯 Available Commands
+## 🎯 Command Overview
 
 ```bash
-snyk-api --help                 # Show all commands
-snyk-api version               # Version information
+snyk-api --help                  # Top-level help
+snyk-api version                 # Version info
 
-# Organizations
-snyk-api orgs list             # List organizations
-snyk-api orgs get <id>         # Get organization by ID
+# Full REST API (103 ops)
+snyk-api rest --help
+snyk-api rest orgs list
+snyk-api rest orgs memberships list --org-id <org>
+snyk-api rest groups orgs list --group-id <group>
+snyk-api rest tenants broker-deployments list
+snyk-api rest self apps list
 
-# Projects
-snyk-api projects list --org-id=<id>              # List projects
-snyk-api projects list --org-id=<id> --origin github --type npm  # Filter projects
-snyk-api projects get <id> --org-id=<id>         # Get project by ID
-snyk-api projects delete <id> --org-id=<id>      # Delete project
+# Full v1 API (93 ops)
+snyk-api v1 --help
+snyk-api v1 projects aggregated-issues --org-id <org> --project-id <proj>
+snyk-api v1 testing test-npm --package express@4.18.2
+snyk-api v1 reporting latest-issues --org-id <org>
+snyk-api v1 integrations list --org-id <org>
+
+# Legacy generated helpers (aliases)
+snyk-api orgs list
+snyk-api projects list --org-id <org>
+
+# Auth, config, completion
+snyk-api auth login --profile default
+snyk-api auth status --profile prod
+snyk-api config list
+snyk-api completion bash
+
+# Context caching
+snyk-api context set --org-id <org> --group-id <group> --project-id <proj>
+snyk-api context show
+
+# Template / jq
+snyk-api rest orgs list --limit 5 --jq '.data[].attributes.name'
+snyk-api rest orgs list --limit 1 --template '{{ (index .data 0).attributes.name }}'
 ```
 
 ### Global Flags
@@ -159,8 +212,10 @@ snyk-api projects delete <id> --org-id=<id>      # Delete project
 ```bash
 --output, -o       Output format: json, yaml, table (default: json)
 --api-url          Override Snyk API URL
---api-version      Snyk API version (default: 2025-11-05)
+--api-version      Snyk API version (default: latest GA)
 --debug            Enable debug logging
+--template         Go text/template to render the result (overrides format)
+--jq               jq-style filter applied before formatting
 ```
 
 ## ⚙️ Configuration
@@ -171,6 +226,22 @@ snyk-api projects delete <id> --org-id=<id>      # Delete project
 |----------|-------------|---------|
 | `SNYK_TOKEN` | API authentication token | **Required** |
 | `SNYK_API` | Custom API endpoint | `https://api.snyk.io` |
+| `SNYK_REST_API` | Custom REST API endpoint | `https://api.snyk.io/rest` |
+| `SNYK_API_VERSION` | REST API version | `2025-11-05` |
+| `SNYK_API_PROFILE` | Profile name | `default` (or `current` from config file) |
+| `SNYK_OUTPUT` | Output format | `json` |
+| `SNYK_PROJECT_ID` | Default project ID | *(unset)* |
+| `SNYK_DEBUG` | Enable debug logging | `false` |
+
+### Config File & Precedence
+
+- Config file: `~/.config/snyk-api/config.yaml`
+- Profiles supported: `profiles.<name>.*` (`token`, `api_url`, `rest_api_url`, `api_version`, `org_id`, `group_id`, `project_id`, `output`, `page_size`, `debug`)
+- Precedence: CLI flags > env vars > config file > built-in defaults
+
+### Releases
+
+- Built with GoReleaser. To produce local artifacts: `goreleaser release --snapshot --clean`.
 
 ### API Versioning
 
@@ -204,32 +275,26 @@ See [API_VERSIONING.md](docs/planning/API_VERSIONING.md) for details.
 
 ## 📊 Project Status
 
-**Current**: Production-ready with 2 API domains ✅
+**Current**: Full API coverage (REST 103 ops + v1 93 ops = 196 total)
 
-| Component | Status | Coverage |
-|-----------|--------|----------|
-| **Organizations API** | ✅ Complete | list, get |
-| **Projects API** | ✅ Complete | list, get, delete |
-| **Targets API** | ⏭️ Future | - |
-| **Issues API** | ⏭️ Future | - |
-| **Ignores API** | ⏭️ Future | - |
-
-**Quality Metrics:**
-- ✅ 21 Go source files (~3,500 lines)
-- ✅ 13 passing tests with race detection
-- ✅ 0 linter issues (golangci-lint)
-- ✅ 0 security vulnerabilities (Snyk Code + SCA)
+| Component | Status | Notes |
+|-----------|--------|-------|
+| REST API | ✅ Complete | Manual + generated clients, nested CLI `snyk-api rest ...` |
+| v1 API | ✅ Complete | Manual clients, CLI `snyk-api v1 ...` |
+| CLI | ✅ Complete | Nested commands, JSON/YAML/table output |
+| SDK | ✅ Complete | Importable Go package with rate limit + retry |
 
 ## 🏗️ Architecture
 
 Built on proven patterns from Snyk's go-application-framework:
 
 ```
-OpenAPI Spec → oapi-codegen → Generated Client → Wrapper → CLI
-                                      ↓
-                                Base Client (rate limit, retry, auth)
-                                      ↓
-                                Snyk REST API
+OpenAPI Spec → oapi-codegen → Generated Client (where possible) → Wrapper → CLI
+Manual REST/v1 Client → Wrapper → CLI
+                                    ↓
+                              Base Client (rate limit, retry, auth)
+                                    ↓
+                              Snyk REST + v1 APIs
 ```
 
 ### Project Structure
@@ -241,8 +306,9 @@ snyk-api/
 ├── pkg/
 │   ├── client/                # Base HTTP client with rate limiting
 │   ├── apiclients/
-│   │   ├── orgs/             # Organizations API client
-│   │   └── projects/         # Projects API client
+│   │   ├── orgs/              # Generated REST clients (sample)
+│   │   ├── rest/              # Manual REST clients (full coverage)
+│   │   └── v1/                # Manual v1 clients (full coverage)
 │   └── config/               # Configuration management
 ├── internal/
 │   ├── commands/             # Cobra CLI commands
