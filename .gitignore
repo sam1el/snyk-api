@@ -43,3 +43,5 @@ temp/
 
 # Documents for planning
 docs/planning/*.md
+# Snyk Security Extension - AI Rules (auto-generated)
+.cursor/rules/snyk_rules.mdc

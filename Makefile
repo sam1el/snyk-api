@@ -7,6 +7,11 @@ GO=go
 GOTEST=$(GO) test
 GOVET=$(GO) vet
 GOLINT=golangci-lint
+ifeq ($(OS),Windows_NT)
+EXT=.exe
+else
+EXT=
+endif
 
 help: ## Display this help message
 	@echo "Snyk API Management Tool - Makefile targets:"
@@ -21,8 +26,8 @@ install-tools: ## Install development tools
 build: ## Build the CLI binary
 	@echo "Building $(BINARY_NAME)..."
 	@mkdir -p $(BUILD_DIR)
-	$(GO) build -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/snyk-api
-	@echo "Build complete: $(BUILD_DIR)/$(BINARY_NAME)"
+	$(GO) build -o $(BUILD_DIR)/$(BINARY_NAME)$(EXT) ./cmd/snyk-api
+	@echo "Build complete: $(BUILD_DIR)/$(BINARY_NAME)$(EXT)"
 
 test: ## Run tests
 	@echo "Running tests..."

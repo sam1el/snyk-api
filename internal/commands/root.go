@@ -1,9 +1,7 @@
 // Package commands provides the CLI command structure for snyk-api.
 package commands
 
-import (
-	"github.com/spf13/cobra"
-)
+import "github.com/spf13/cobra"
 
 var (
 	// Global flags
@@ -11,6 +9,9 @@ var (
 	apiURL       string
 	version      string
 	outputFormat string
+	profileName  string
+	templateText string
+	jqFilter     string
 )
 
 // rootCmd represents the base command when called without any subcommands.
@@ -56,6 +57,10 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&apiURL, "api-url", "", "Override Snyk API URL")
 	rootCmd.PersistentFlags().StringVar(&version, "api-version", "", "Snyk API version (e.g., 2025-11-05)")
 	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "json", "Output format: json, yaml, table")
+	rootCmd.PersistentFlags().StringVar(&profileName, "profile", "", "Profile name to use")
+	rootCmd.PersistentFlags().StringVar(&templateText, "template", "", "Go template for output rendering (overrides format)")
+	rootCmd.PersistentFlags().StringVar(&jqFilter, "jq", "", "jq-style filter applied before formatting")
+	rootCmd.PersistentPreRunE = applyConfigPreRun
 
 	// Add subcommands - Generated REST API (minimal)
 	rootCmd.AddCommand(newOrgsCmd())
@@ -69,7 +74,17 @@ func init() {
 	// Add full REST API commands (manual implementation)
 	rootCmd.AddCommand(newRESTCmd())
 
+	// Config management
+	rootCmd.AddCommand(newConfigCmd())
+
+	// Auth helpers
+	rootCmd.AddCommand(newAuthCmd())
+
+	// Context helpers
+	rootCmd.AddCommand(newContextCmd())
+
 	// Utility commands
+	rootCmd.AddCommand(newCompletionCmd())
 	rootCmd.AddCommand(newVersionCmd())
 }
 
@@ -91,4 +106,17 @@ func getAPIURL() string {
 // getAPIVersion returns the configured API version.
 func getAPIVersion() string {
 	return version
+}
+
+// getProfile returns the configured profile name.
+func getProfile() string {
+	return profileName
+}
+
+func getTemplate() string {
+	return templateText
+}
+
+func getJQ() string {
+	return jqFilter
 }

@@ -1,0 +1,18 @@
+# Snyk policy file
+version: v1.25.0
+
+ignore:
+  'snyk:lic:golang:github.com:hashicorp:go-uuid:MPL-2.0':
+    - '*':
+        reason: 'Transitive dependency from go-application-framework. MPL-2.0 is permissive and acceptable for this project.'
+        expires: never
+        created: 2024-12-19
+
+exclude:
+  global:
+    - examples/**
+    - docs/**
+    - scripts/**
+    - .github/**
+
+patch: {}

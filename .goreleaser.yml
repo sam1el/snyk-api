@@ -1,0 +1,43 @@
+project_name: snyk-api
+
+builds:
+  - id: snyk-api
+    main: ./cmd/snyk-api/main.go
+    binary: snyk-api
+    ldflags:
+      - "-s -w"
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    mod_timestamp: "{{ .CommitDate }}"
+
+archives:
+  - id: snyk-api
+    builds:
+      - snyk-api
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^chore:"
+
+release:
+  draft: false
+  prerelease: false
